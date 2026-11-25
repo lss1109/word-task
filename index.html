@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <!-- 휴대폰 화면 폭에 맞추고, 두 번 탭해서 확대되는 것을 막음 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>단어 판단 실험</title>
+
+  <!-- jsPsych 본체와 플러그인 (버전 고정: 실험 도중 업데이트로 동작이 바뀌지 않도록) -->
+  <script src="https://unpkg.com/jspsych@8.4.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.1.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.2.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@2.2.1"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-call-function@2.1.0"></script>
+  <link rel="stylesheet" href="https://unpkg.com/jspsych@8.4.0/css/jspsych.css" />
+
+  <!-- 이 실험의 화면 스타일 -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 자극 목록을 먼저 불러온 뒤 실험 코드를 실행 -->
+  <script src="stimuli.js"></script>
+  <script src="experiment.js"></script>
+</body>
+</html>

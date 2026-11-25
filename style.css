@@ -1,0 +1,142 @@
+/* =====================================================================
+   style.css — 휴대폰 화면용 스타일
+   두 조건(자기참조/의미 판단)은 질문 문구만 다르고 글자 크기·위치·버튼은 모두 같습니다.
+   ===================================================================== */
+
+html, body {
+  margin: 0;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  /* 길게 눌러 글자 선택·메뉴가 뜨는 것을 막음 */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jspsych-content {
+  max-width: 600px;
+  width: 92vw;
+}
+
+/* 설명문·안내문 */
+.text-page {
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 8px 0 4px;
+}
+.text-page h2 { font-size: 20px; margin: 8px 0 12px; }
+.text-page h3 { font-size: 16px; margin: 16px 0 4px; }
+.text-page .emph { font-weight: 700; text-align: center; }
+
+/* + 표시와 빈 화면: 단어가 나오는 자리와 같은 높이를 차지하게 해서 화면이 흔들리지 않게 함 */
+.fixation, .blank {
+  font-size: 48px;
+  height: 300px;
+  line-height: 300px;
+  text-align: center;
+}
+
+/* 남은 시간 표시: 막대가 왼쪽에서 오른쪽으로 줄어들고, 숫자가 3→2→1로 바뀜 */
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 auto 20px;
+  width: 70%;
+}
+.timer-track {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.timer-bar {
+  height: 100%;
+  width: 100%;
+  background: #718096;
+  border-radius: 4px;
+  transform-origin: left center;
+  animation-name: timer-shrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  /* 지속 시간은 experiment.js에서 CONFIG.WORD_MS로 설정 */
+}
+@keyframes timer-shrink {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+.timer-num {
+  width: 1.5em;
+  font-size: 18px;
+  font-weight: 700;
+  color: #4a5568;
+  text-align: right;
+}
+
+/* 단어 제시 화면 */
+.question {
+  font-size: 18px;
+  font-weight: 600;
+  min-height: 56px;        /* 질문 길이와 상관없이 단어 위치가 같도록 */
+  margin-bottom: 12px;
+  color: #333;
+}
+.word {
+  font-size: 40px;
+  font-weight: 700;
+  margin: 24px 0 36px;
+}
+
+/* 예/아니오 버튼: 엄지로 누르기 쉬운 큰 버튼, 위치 고정(예=왼쪽, 아니오=오른쪽) */
+#jspsych-html-button-response-btngroup {
+  gap: 16px;
+}
+.resp-btn {
+  font-size: 22px;
+  font-weight: 600;
+  width: 40vw;
+  max-width: 220px;
+  height: 72px;
+  border: 2px solid #4a5568;
+  border-radius: 12px;
+  background: #f7fafc;
+  color: #1a1a1a;
+  touch-action: manipulation;   /* 탭 지연·확대 방지 */
+}
+.resp-btn:disabled { opacity: 0.45; }
+.resp-btn.chosen,
+.resp-btn.chosen:disabled {
+  opacity: 1;
+  background: #2b6cb0;
+  border-color: #2b6cb0;
+  color: #ffffff;
+}
+
+/* 안내 화면 버튼 */
+.page-btn {
+  font-size: 17px;
+  padding: 14px 20px;
+  margin: 6px;
+  min-width: 200px;
+  border: 0;
+  border-radius: 10px;
+  background: #2b6cb0;
+  color: #fff;
+  touch-action: manipulation;
+}
+
+/* 설문 문항 글자 크기 */
+#jspsych-survey-multi-choice_form { text-align: left; font-size: 16px; }
+.jspsych-survey-multi-choice-option { margin: 6px 0; }
+.jspsych-survey-multi-choice-option input { transform: scale(1.3); margin-right: 8px; }
+#jspsych-survey-multi-choice-next { font-size: 17px; padding: 12px 28px; }
+
+/* 테스트 모드 표시 */
+#test-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+  background: #c53030; color: #fff; font-size: 13px; text-align: center; padding: 4px;
+}
