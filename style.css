@@ -135,6 +135,26 @@ html, body {
 .jspsych-survey-multi-choice-option input { transform: scale(1.3); margin-right: 8px; }
 #jspsych-survey-multi-choice-next { font-size: 17px; padding: 12px 28px; }
 
+/* 참여 확인 코드 */
+.code-box {
+  text-align: center;
+  border: 2px dashed #2b6cb0;
+  border-radius: 12px;
+  padding: 14px 8px;
+  margin: 16px 0;
+}
+.code-label { font-size: 14px; color: #4a5568; }
+.code {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  margin: 6px 0 10px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  -webkit-user-select: text;   /* 코드는 길게 눌러 복사할 수 있게 */
+  user-select: text;
+}
+.mail-btn { display: inline-block; text-decoration: none; }
+
 /* 테스트 모드 표시 */
 #test-banner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10;

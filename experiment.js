@@ -18,7 +18,11 @@ const CONFIG = {
   DATAPIPE_ID: "여기에_DataPipe_실험_ID",
 
   // 설명문에 들어갈 연구자 연락처 (식별 정보가 아니라 연구자 본인 연락처)
-  CONTACT: "[연구자 이메일 주소를 입력하세요]",
+  CONTACT: "lss1109@snu.ac.kr",
+
+  // 참여 확인 코드의 확인용 글자를 만드는 비밀 숫자. verify_code.py의 값과 같아야 함.
+  // (아무 숫자로 바꿔도 되지만, 바꾸면 두 파일 모두 바꾸세요.)
+  CODE_SALT: 7319,
 
   // 제시 시간(밀리초) — 두 조건에 똑같이 적용됩니다.
   FIX_MS: 500,     // + 표시
@@ -313,7 +317,12 @@ const CONSENT_HTML = `
      어떠한 불이익도 없습니다. 언제든 브라우저 창을 닫으면 참여가 중단되며,
      이 경우 그때까지의 응답은 <b>저장되지 않습니다</b>.</p>
   <h3>위험과 이익</h3>
-  <p>일상생활 수준을 넘는 위험은 없습니다. 참여에 따른 별도의 보상은 없습니다.</p>
+  <p>일상생활 수준을 넘는 위험은 없습니다.</p>
+  <p>실험을 마치면 화면에 <b>참여 확인 코드</b>가 나옵니다. 실험 참여 이후 이 코드를
+     연구자 이메일(${CONFIG.CONTACT})로 남겨 주시면, <b>추첨을 통해 5분께 5천 원 상당의 사례</b>를
+     드리겠습니다. 참여 확인 코드는 응답 자료와 함께 저장되지 않으므로, 이메일을 보내셔도
+     응답 내용과 연결되지 않습니다. 보내 주신 이메일 주소는 추첨과 사례 지급에만 쓰고,
+     지급이 끝나면 삭제합니다.</p>
   <h3>자료 관리</h3>
   <p>이름, 학번, 연락처 등 개인을 알아볼 수 있는 정보는 수집하지 않습니다.
      응답은 무작위 코드로만 구분되며, <b>수업 과제 목적으로만</b> 사용됩니다.
@@ -464,6 +473,26 @@ async function getVersion() {
   } catch (err) {
     return { version: Math.random() < 0.5 ? 1 : 2, source: "random_fallback" };
   }
+}
+
+// ------------------------- 참여 확인 코드 ------------------------------
+// 형식: ABCD-EF (앞 4글자는 무작위, 뒤 2글자는 앞 4글자와 CODE_SALT로 계산한 확인용 글자)
+// 헷갈리기 쉬운 글자(I, L, O, 0, 1)는 뺌. verify_code.py로 진짜 코드인지 확인할 수 있음.
+const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // 31글자
+
+function codeCheck(body) {
+  let s = CONFIG.CODE_SALT % 961;
+  for (let i = 0; i < body.length; i++) {
+    s = (s * 31 + CODE_CHARS.indexOf(body[i]) * (i + 7)) % 961; // 961 = 31 × 31
+  }
+  return CODE_CHARS[Math.floor(s / 31)] + CODE_CHARS[s % 31];
+}
+
+function makeCompletionCode() {
+  const r = new Uint32Array(4);
+  window.crypto.getRandomValues(r);
+  const body = Array.from(r, (x) => CODE_CHARS[x % CODE_CHARS.length]).join("");
+  return body + "-" + codeCheck(body);
 }
 
 // --------------------------- 실험 조립 -------------------------------
@@ -627,28 +656,49 @@ async function main() {
     },
   });
 
-  // 12. 마지막 화면
+  // 12. 마지막 화면 (+ 참여 확인 코드)
+  // 끝까지 참여한 사람은 자료 사용 동의 여부와 상관없이 코드를 받음(사례 추첨에 불이익 없음).
+  // 코드는 이 화면에만 보이고 응답 자료(CSV)에는 저장하지 않음 → 이메일과 응답이 연결되지 않음.
   timeline.push({
     type: jsPsychHtmlButtonResponse,
     choices: [],
     stimulus: () => {
+      const code = makeCompletionCode();
+      let status;
       if (!reuseConsent) {
-        return '<div class="text-page"><p class="emph">자료 사용에 동의하지 않으셔서 ' +
-          "오늘의 응답은 저장되지 않았습니다.</p><p>참여해 주셔서 감사합니다. 이제 창을 닫으셔도 됩니다.</p></div>";
+        status = '<p class="emph">자료 사용에 동의하지 않으셔서 오늘의 응답은 저장되지 않았습니다.</p>' +
+          "<p>자료를 폐기해도 사례 추첨에는 그대로 참여하실 수 있습니다.</p>";
+      } else if (TEST_MODE) {
+        status = '<p class="emph">테스트 모드: 자료를 전송하지 않았습니다.</p>' +
+          '<p><button class="page-btn" id="dl-btn">CSV 내려받기</button></p>';
+      } else if (saveResult && saveResult.ok) {
+        status = '<p class="emph">응답이 저장되었습니다. 참여해 주셔서 감사합니다.</p>';
+      } else {
+        status = '<p class="emph">죄송합니다. 응답 저장에 실패했습니다.</p>' +
+          "<p>인터넷 연결 문제일 수 있습니다. 번거로우시겠지만 코드를 보내실 때 " +
+          "'저장 실패'라고 함께 적어 주시면 감사하겠습니다.</p>";
       }
-      if (TEST_MODE) {
-        return '<div class="text-page"><p class="emph">테스트 모드: 자료를 전송하지 않았습니다.</p>' +
-          '<p><button class="page-btn" id="dl-btn">CSV 내려받기</button></p></div>';
-      }
-      if (saveResult && saveResult.ok) {
-        return '<div class="text-page"><p class="emph">응답이 저장되었습니다.</p>' +
-          "<p>참여해 주셔서 감사합니다. 이제 창을 닫으셔도 됩니다.</p></div>";
-      }
-      return '<div class="text-page"><p class="emph">죄송합니다. 응답 저장에 실패했습니다.</p>' +
-        `<p>인터넷 연결을 확인해 주세요. 번거로우시겠지만 연구자(${CONFIG.CONTACT})에게 ` +
-        "저장 실패를 알려 주시면 감사하겠습니다.</p></div>";
+      const mailto = `mailto:${CONFIG.CONTACT}?subject=${encodeURIComponent("실험 참여 확인 코드")}` +
+        `&body=${encodeURIComponent("참여 확인 코드: " + code)}`;
+      return '<div class="text-page">' + status +
+        '<div class="code-box"><div class="code-label">참여 확인 코드</div>' +
+        `<div class="code" id="completion-code">${code}</div>` +
+        '<button class="page-btn" id="copy-btn">코드 복사</button>' +
+        `<a class="page-btn mail-btn" href="${mailto}">이메일로 보내기</a></div>` +
+        `<p>위 코드를 <b>${CONFIG.CONTACT}</b>로 보내 주시면 사례 추첨(5분, 5천 원 상당)에 참여됩니다. ` +
+        "코드는 응답 자료와 연결되지 않습니다. 화면을 캡처해 두셔도 됩니다.</p>" +
+        "<p>이제 창을 닫으셔도 됩니다.</p></div>";
     },
     on_load: () => {
+      const copyBtn = document.getElementById("copy-btn");
+      copyBtn.addEventListener("click", () => {
+        const code = document.getElementById("completion-code").textContent;
+        try {
+          navigator.clipboard.writeText(code).then(() => { copyBtn.textContent = "복사됨"; });
+        } catch (e) {
+          copyBtn.textContent = "길게 눌러 직접 복사해 주세요";
+        }
+      });
       const btn = document.getElementById("dl-btn");
       if (btn) {
         btn.addEventListener("click", () => {
